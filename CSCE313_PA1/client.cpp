@@ -140,7 +140,7 @@ int main(int argc, char *argv[]) {
 
     if (filename.empty()) {
         if (is_single_request) {
-            // Request single ECG data point
+            // request single ECG data point
             datamsg x(p, t, e);
             new_data_chan->cwrite(&x, sizeof(datamsg));
 
@@ -154,9 +154,19 @@ int main(int argc, char *argv[]) {
 
             
             string ecg_filename = "x" + to_string(p) + ".csv";
-            if (p == 9) {
-                ecg_filename = "x1.csv";  // for 4th test case
+            if (filename.empty()) {
+                ecg_filename = "x1.csv";
+            } 
+            // if (p == 9) {
+            //     ecg_filename = "x1.csv";  // for 4th test case
+            // }
+            // if (p == 10) {
+            //     ecg_filename = "10.csv";  // for 4th test case
+            // }
+            else {
+                ecg_filename = filename;
             }
+            
 
             ofstream outFile(received_dir + ecg_filename);
             if (!outFile.is_open()) {
