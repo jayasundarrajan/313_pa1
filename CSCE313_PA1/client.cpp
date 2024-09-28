@@ -31,8 +31,12 @@ int main(int argc, char *argv[]) {
     int e = 1;  
     string filename = "";  
 
+    
+    int chunk_size = MAX_MESSAGE;
+    bool new_channel_requested = false;
+    bool is_single_request = false;
 
-    int chunk_size = MAX_MESSAGE;  
+
 
   
     while ((opt = getopt(argc, argv, "p:t:e:f:m:c")) != -1) {
@@ -42,7 +46,7 @@ int main(int argc, char *argv[]) {
                 break;
             case 't':
                 t = atof(optarg);  
-                // is_single_request = true;
+                is_single_request = true;
                 break;
             case 'e':
                 e = atoi(optarg);  
@@ -51,10 +55,10 @@ int main(int argc, char *argv[]) {
                 filename = optarg;  
                 break;
             case 'm':
-                // chunk_size = atoi(optarg);  // Buffer size for file transfer
+                chunk_size = atoi(optarg);  // Buffer size for file transfer
                 break;
             case 'c':
-                // new_channel_requested = true;  // Request a new channel
+                new_channel_requested = true;  // Request a new channel
                 break;
             default:
                 cerr << "Usage: " << argv[0] << " [-p patient_id] [-t time] [-e ecg_type] "
@@ -76,8 +80,8 @@ int main(int argc, char *argv[]) {
             perror("setsid failed");
             exit(EXIT_FAILURE);
         }
-        cout << "Starting the server..." << endl;
-        string chunk_size_str = to_string(MAX_MESSAGE); 
+        std::cout << "Starting the server..." << std::endl;
+        string chunk_size_str = to_string(chunk_size); 
         char *args_exec[] = {const_cast<char*>("./server"), const_cast<char*>("-m"),
                              const_cast<char*>(chunk_size_str.c_str()), nullptr};
         execvp(args_exec[0], args_exec);
@@ -100,7 +104,6 @@ int main(int argc, char *argv[]) {
     //Task 4:
 	//Request a new channel
 
-    bool new_channel_requested = false;
 
     if (new_channel_requested) {
         cout << "requesting a new channel..." << endl;
@@ -133,7 +136,7 @@ int main(int argc, char *argv[]) {
     
 
 
-    bool is_single_request = false;  
+  
 
     if (filename.empty()) {
         if (is_single_request) {
@@ -219,7 +222,6 @@ int main(int argc, char *argv[]) {
         }
 
         // read chunks of file
-        int chunk_size = MAX_MESSAGE;  
 
 
 
