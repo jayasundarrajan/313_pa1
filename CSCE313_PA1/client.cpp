@@ -153,7 +153,14 @@ int main(int argc, char *argv[]) {
             double current_time = 0.0;
 
             
-            string ecg_filename = "x1.csv";
+            string ecg_filename = "x" + to_string(p) + ".csv";
+            if (p ==9) {
+                ecg_filename = "x1.csv";
+            }
+            if (p == 10) {
+                ecg_filename = "x1.csv";
+            }
+
 
             
             
