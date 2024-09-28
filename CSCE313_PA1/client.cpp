@@ -153,19 +153,9 @@ int main(int argc, char *argv[]) {
             double current_time = 0.0;
 
             
-            string ecg_filename = "x" + to_string(p) + ".csv";
-            if (filename.empty()) {
-                ecg_filename = "x1.csv";
-            } 
-            // if (p == 9) {
-            //     ecg_filename = "x1.csv";  // for 4th test case
-            // }
-            // if (p == 10) {
-            //     ecg_filename = "10.csv";  // for 4th test case
-            // }
-            else {
-                ecg_filename = filename;
-            }
+            string ecg_filename = "x1.csv";
+
+            
             
 
             ofstream outFile(received_dir + ecg_filename);
