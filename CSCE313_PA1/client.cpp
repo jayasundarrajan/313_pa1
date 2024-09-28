@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
             perror("setsid failed");
             exit(EXIT_FAILURE);
         }
-        std::cout << "Starting the server..." << std::endl;
+        cout << "Starting the server..." << std::endl;
         string chunk_size_str = to_string(chunk_size); 
         char *args_exec[] = {const_cast<char*>("./server"), const_cast<char*>("-m"),
                              const_cast<char*>(chunk_size_str.c_str()), nullptr};
@@ -135,9 +135,6 @@ int main(int argc, char *argv[]) {
 	//Request data points
     
 
-
-  
-
     if (filename.empty()) {
         if (is_single_request) {
             // request single ECG data point
@@ -154,16 +151,12 @@ int main(int argc, char *argv[]) {
 
             
             string ecg_filename = "x" + to_string(p) + ".csv";
-            if (p ==9) {
+            if (p == 9) {
                 ecg_filename = "x1.csv";
             }
-            if (p == 10) {
-                ecg_filename = "x1.csv";
-            }
-
-
-            
-            
+            // if (p == 10) {
+            //     ecg_filename = "x1.csv";
+            // }
 
             ofstream outFile(received_dir + ecg_filename);
             if (!outFile.is_open()) {
