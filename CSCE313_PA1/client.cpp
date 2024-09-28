@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
     int e = 1;  
     string filename = "";  
 
-    
+
     int chunk_size = MAX_MESSAGE;
     bool new_channel_requested = false;
     bool is_single_request = false;
@@ -146,7 +146,7 @@ int main(int argc, char *argv[]) {
 
             double reply;
             new_data_chan->cread(&reply, sizeof(double));
-            cout << "Patient " << p << ", ECG " << e << ", Time " << t << ": " << reply << endl;
+	        cout << "For person " << p << ", at time " << t << ", the value of ecg " << e << " is " << reply << endl;
         } else {
             const int num_points = 1000;  
             const double dt = 0.004;      
