@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
             perror("setsid failed");
             exit(EXIT_FAILURE);
         }
-        cout << "Starting the server..." << std::endl;
+        std::cout << "Starting the server..." << std::endl;
         string chunk_size_str = to_string(chunk_size); 
         char *args_exec[] = {const_cast<char*>("./server"), const_cast<char*>("-m"),
                              const_cast<char*>(chunk_size_str.c_str()), nullptr};
@@ -92,8 +92,11 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
+
+    std::cout << "waiting for server to start..." << endl;
     // waiting .2 sec for server to ready
-    usleep(200000); 
+    usleep(500000); 
+    std::cout << "server started" << endl;
 
     // FIFORequestChannel chan("control", FIFORequestChannel::CLIENT_SIDE);
 
@@ -106,14 +109,14 @@ int main(int argc, char *argv[]) {
 
 
     if (new_channel_requested) {
-        cout << "requesting a new channel..." << endl;
+        std::cout << "requesting a new channel..." << endl;
         MESSAGE_TYPE new_channel_request = NEWCHANNEL_MSG;
         control_chan->cwrite(&new_channel_request, sizeof(MESSAGE_TYPE));
 
         char new_channel_name[100];
         memset(new_channel_name, 0, sizeof(new_channel_name));  
         control_chan->cread(new_channel_name, sizeof(new_channel_name));
-        cout << "created new chanel: " << new_channel_name << endl;
+        std::cout << "created new chanel: " << new_channel_name << endl;
 
         new_data_chan = new FIFORequestChannel(new_channel_name, FIFORequestChannel::CLIENT_SIDE);
     }
@@ -135,29 +138,26 @@ int main(int argc, char *argv[]) {
 	//Request data points
     
 
+
+  
+
     if (filename.empty()) {
         if (is_single_request) {
-            // request single ECG data point
+            // Request single ECG data point
             datamsg x(p, t, e);
             new_data_chan->cwrite(&x, sizeof(datamsg));
 
             double reply;
             new_data_chan->cread(&reply, sizeof(double));
-	        cout << "For person " << p << ", at time " << t << ", the value of ecg " << e << " is " << reply << endl;
+	        std::cout << "For person " << p << ", at time " << t << ", the value of ecg " << e << " is " << reply << endl;
         } else {
             const int num_points = 1000;  
             const double dt = 0.004;      
             double current_time = 0.0;
 
             
-            // string ecg_filename = to_string(p) + ".csv";
-            // if (p == 9) {
-            //     ecg_filename = "x1.csv";
-            // }
-
             string ecg_filename = "x1.csv";
-
-           
+            
 
             ofstream outFile(received_dir + ecg_filename);
             if (!outFile.is_open()) {
@@ -190,14 +190,14 @@ int main(int argc, char *argv[]) {
                 current_time += dt;
             }
             outFile.close();
-            cout << "ecg data saved to:" << received_dir + ecg_filename << endl;
+            std::cout << "ecg data saved to: " << received_dir + ecg_filename << endl;
         }
     }
 
     // Task 3:
     //Request files
     if (!filename.empty()) {
-        cout << "Requesting file: " << filename << endl;
+        std::cout << "Requesting file: " << filename << endl;
 
         filemsg fm(0, 0);
         int len = sizeof(filemsg) + filename.size() + 1;
@@ -209,14 +209,11 @@ int main(int argc, char *argv[]) {
 
         __int64_t file_length;
         new_data_chan->cread(&file_length, sizeof(__int64_t));
-        cout << "File size: " << file_length << " bytes" << endl;
-
-
-        string transfer_file_name = to_string(p) + ".csv";
+        std::cout << "File size: " << file_length << " bytes" << endl;
 
         // open recieved to write
 
-        FILE *fp = fopen((received_dir + transfer_file_name).c_str(), "wb");
+        FILE *fp = fopen((received_dir + filename).c_str(), "wb");
         if (!fp) {
             cerr << "Error opening file: " << filename << endl;
             delete[] buf;
@@ -254,9 +251,10 @@ int main(int argc, char *argv[]) {
             offset += request_size;
             remaining -= request_size;
         }
-
+        fflush(fp);
+        fsync(fileno(fp));
         fclose(fp);
-        cout << "file transfer complete: " << filename << endl;
+        std::cout << "file transfer complete: " << filename << endl;
         delete[] buf;
     }
 
@@ -267,20 +265,25 @@ int main(int argc, char *argv[]) {
 
     
     if (new_channel_requested) {
-        control_chan->cwrite(&quit_msg, sizeof(MESSAGE_TYPE));
+
+        
         new_data_chan->cwrite(&quit_msg, sizeof(MESSAGE_TYPE));
-    } else {
+        control_chan->cwrite(&quit_msg, sizeof(MESSAGE_TYPE));
+    } 
+    
+    else {
         new_data_chan->cwrite(&quit_msg, sizeof(MESSAGE_TYPE));
     }
 
+    // std::cout << "client done waiting for server to exit..." << endl;
+
     wait(NULL);
+    std::cout << "server exited" << endl;
 
     // clean up channels
+    delete new_data_chan;
     if (new_channel_requested) {
-        delete new_data_chan;      
-        delete control_chan;   
-    } else {
-        delete new_data_chan;     
+        delete control_chan;
     }
 
     return 0;
