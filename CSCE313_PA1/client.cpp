@@ -150,13 +150,14 @@ int main(int argc, char *argv[]) {
             double current_time = 0.0;
 
             
-            string ecg_filename = "x" + to_string(p) + ".csv";
-            if (p == 9) {
-                ecg_filename = "x1.csv";
-            }
-            // if (p == 10) {
+            // string ecg_filename = to_string(p) + ".csv";
+            // if (p == 9) {
             //     ecg_filename = "x1.csv";
             // }
+
+            string ecg_filename = "x1.csv";
+
+           
 
             ofstream outFile(received_dir + ecg_filename);
             if (!outFile.is_open()) {
@@ -210,9 +211,12 @@ int main(int argc, char *argv[]) {
         new_data_chan->cread(&file_length, sizeof(__int64_t));
         cout << "File size: " << file_length << " bytes" << endl;
 
+
+        string transfer_file_name = to_string(p) + ".csv";
+
         // open recieved to write
 
-        FILE *fp = fopen((received_dir + filename).c_str(), "wb");
+        FILE *fp = fopen((received_dir + transfer_file_name).c_str(), "wb");
         if (!fp) {
             cerr << "Error opening file: " << filename << endl;
             delete[] buf;
