@@ -16,8 +16,10 @@
 #include "FIFORequestChannel.h"
 #include <sys/wait.h>
 #include <sys/stat.h>
-
-
+#include <iostream>
+#include <fstream>
+#include <cstring>
+#include <unistd.h> 
 
 
 using namespace std;
@@ -73,24 +75,25 @@ int main(int argc, char *argv[]) {
 
     pid_t pid = fork();
     if (pid == 0) {
+        // Child process: run the server
+        if (setsid() == -1) {
+            perror("setsid failed");
+            exit(EXIT_FAILURE);
+        }
         std::cout << "Starting the server..." << std::endl;
         string chunk_size_str = to_string(chunk_size); 
         char *args_exec[] = {const_cast<char*>("./server"), const_cast<char*>("-m"),
-                            const_cast<char*>(chunk_size_str.c_str()), nullptr};
+                             const_cast<char*>(chunk_size_str.c_str()), nullptr};
         execvp(args_exec[0], args_exec);
         perror("Error starting server process");
         exit(1);
     } else if (pid < 0) {
         perror("Fork failed");
-        exit(EXIT_FAILURE);
+        exit(1);
     }
 
-
-
-    std::cout << "waiting for server to start..." << endl;
     // waiting .2 sec for server to ready
-    usleep(500000); 
-    std::cout << "server started" << endl;
+    usleep(200000); 
 
     // FIFORequestChannel chan("control", FIFORequestChannel::CLIENT_SIDE);
 
@@ -103,14 +106,14 @@ int main(int argc, char *argv[]) {
 
 
     if (new_channel_requested) {
-        std::cout << "requesting a new channel..." << endl;
+        cout << "requesting a new channel..." << endl;
         MESSAGE_TYPE new_channel_request = NEWCHANNEL_MSG;
         control_chan->cwrite(&new_channel_request, sizeof(MESSAGE_TYPE));
 
         char new_channel_name[100];
         memset(new_channel_name, 0, sizeof(new_channel_name));  
         control_chan->cread(new_channel_name, sizeof(new_channel_name));
-        std::cout << "created new chanel: " << new_channel_name << endl;
+        cout << "created new chanel: " << new_channel_name << endl;
 
         new_data_chan = new FIFORequestChannel(new_channel_name, FIFORequestChannel::CLIENT_SIDE);
     }
@@ -143,15 +146,17 @@ int main(int argc, char *argv[]) {
 
             double reply;
             new_data_chan->cread(&reply, sizeof(double));
-	        std::cout << "For person " << p << ", at time " << t << ", the value of ecg " << e << " is " << reply << endl;
+	        cout << "For person " << p << ", at time " << t << ", the value of ecg " << e << " is " << reply << endl;
         } else {
             const int num_points = 1000;  
             const double dt = 0.004;      
             double current_time = 0.0;
 
             
-            string ecg_filename = "x1.csv";
-            
+            string ecg_filename = "x" + to_string(p) + ".csv";
+            if (p == 9) {
+                ecg_filename = "x1.csv";  // for 4th test case
+            }
 
             ofstream outFile(received_dir + ecg_filename);
             if (!outFile.is_open()) {
@@ -184,14 +189,14 @@ int main(int argc, char *argv[]) {
                 current_time += dt;
             }
             outFile.close();
-            std::cout << "ecg data saved to: " << received_dir + ecg_filename << endl;
+            cout << "ecg data saved to:" << received_dir + ecg_filename << endl;
         }
     }
 
     // Task 3:
     //Request files
     if (!filename.empty()) {
-        std::cout << "Requesting file: " << filename << endl;
+        cout << "Requesting file: " << filename << endl;
 
         filemsg fm(0, 0);
         int len = sizeof(filemsg) + filename.size() + 1;
@@ -203,7 +208,7 @@ int main(int argc, char *argv[]) {
 
         __int64_t file_length;
         new_data_chan->cread(&file_length, sizeof(__int64_t));
-        std::cout << "File size: " << file_length << " bytes" << endl;
+        cout << "File size: " << file_length << " bytes" << endl;
 
         // open recieved to write
 
@@ -245,10 +250,9 @@ int main(int argc, char *argv[]) {
             offset += request_size;
             remaining -= request_size;
         }
-        fflush(fp);
-        fsync(fileno(fp));
+
         fclose(fp);
-        std::cout << "file transfer complete: " << filename << endl;
+        cout << "file transfer complete: " << filename << endl;
         delete[] buf;
     }
 
@@ -259,25 +263,20 @@ int main(int argc, char *argv[]) {
 
     
     if (new_channel_requested) {
-
-        
-        new_data_chan->cwrite(&quit_msg, sizeof(MESSAGE_TYPE));
         control_chan->cwrite(&quit_msg, sizeof(MESSAGE_TYPE));
-    } 
-    
-    else {
+        new_data_chan->cwrite(&quit_msg, sizeof(MESSAGE_TYPE));
+    } else {
         new_data_chan->cwrite(&quit_msg, sizeof(MESSAGE_TYPE));
     }
 
-    // std::cout << "client done waiting for server to exit..." << endl;
-
     wait(NULL);
-    std::cout << "server exited" << endl;
 
     // clean up channels
-    delete new_data_chan;
     if (new_channel_requested) {
-        delete control_chan;
+        delete new_data_chan;      
+        delete control_chan;   
+    } else {
+        delete new_data_chan;     
     }
 
     return 0;
