@@ -75,22 +75,18 @@ int main(int argc, char *argv[]) {
 
     pid_t pid = fork();
     if (pid == 0) {
-        // Child process: run the server
-        if (setsid() == -1) {
-            perror("setsid failed");
-            exit(EXIT_FAILURE);
-        }
         std::cout << "Starting the server..." << std::endl;
         string chunk_size_str = to_string(chunk_size); 
         char *args_exec[] = {const_cast<char*>("./server"), const_cast<char*>("-m"),
-                             const_cast<char*>(chunk_size_str.c_str()), nullptr};
+                            const_cast<char*>(chunk_size_str.c_str()), nullptr};
         execvp(args_exec[0], args_exec);
         perror("Error starting server process");
         exit(1);
     } else if (pid < 0) {
         perror("Fork failed");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
+
 
 
     std::cout << "waiting for server to start..." << endl;
